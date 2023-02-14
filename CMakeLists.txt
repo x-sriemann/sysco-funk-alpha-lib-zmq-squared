@@ -6,9 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SRC_INCLUDES  ${CMAKE_CURRENT_LIST_DIR}/src  CACHE STRING "Global includes")
 set(MSGPACK_INCLUDE ${CMAKE_CURRENT_LIST_DIR}/3rdParty/cppack/msgpack/include/msgpack CACHE STRING "MSGPACK include")
-
+set(TRACY_INCLUDES  ${CMAKE_CURRENT_LIST_DIR}/3rdParty/profiler/tracy-0.9/public/  CACHE STRING "Tracy includes")
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(3rdParty/profiler/tracy-0.9)
 
 include(GNUInstallDirs)
 
