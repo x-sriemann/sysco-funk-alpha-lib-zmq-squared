@@ -13,8 +13,9 @@ namespace scf {
         class ZMQConnector {
         public:
              explicit ZMQConnector(ZMQSharedContext &aContext);
-             ZMQConnector():ZMQConnector(SharedContext){}
-             virtual ~ZMQConnector()=default;
+             ZMQConnector();
+
+             virtual ~ZMQConnector();
              ZMQContext getContext(){
                  return context.getContext();
              }

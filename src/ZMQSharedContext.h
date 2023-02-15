@@ -23,11 +23,11 @@ namespace scf {
                     zmq_ctx_destroy(sharedContext);
                 }
             }
-            virtual void* getContext() final {
+            virtual ZMQContext getContext() final {
                 return sharedContext;
             }
 
-            static void* sharedContext;
+            static ZMQContext sharedContext;
         };
 
         extern ZMQSharedContext SharedContext;

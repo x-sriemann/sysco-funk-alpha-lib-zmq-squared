@@ -20,10 +20,10 @@ namespace scf{
         public:
             ZMQSubscribeProvider(ZMQConnector &aConnector, std::unique_ptr<ZMQBaseUri> uri, const std::string &defaultTopic="default");
             ~ZMQSubscribeProvider();
-            bool receive();
+            bool receive(const std::string &aTopic="");
 
-            const std::string &getReplyTo() const;
-            const ZMQMessage &getMessage() const;
+            [[nodiscard]] const std::string &getReplyTo() const;
+            [[nodiscard]] const ZMQMessage &getMessage() const;
             ZMQSubscribeProvider & setTopic(const std::string &aTopic);
 
         private:

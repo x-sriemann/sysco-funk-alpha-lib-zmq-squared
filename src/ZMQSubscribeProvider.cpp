@@ -18,7 +18,9 @@ namespace scf{
         ZMQSubscribeProvider::~ZMQSubscribeProvider(){
             zmq_close(subscriber);
         }
-        bool ZMQSubscribeProvider::receive(){
+        bool ZMQSubscribeProvider::receive(const std::string &aTopic){
+
+            if(not topic.empty()) setTopic(aTopic);
 
             auto env=s_recv(subscriber);
             if(env == nullptr){return false;}

@@ -195,8 +195,8 @@ void PublishTopicOne(scf::zmq::ZMQConnector *conn, bool *running)
     tracy::SetThreadName("PublishTopicOne");
     ZMQBindings bindings;
     ZMQUriFactory factory{};
-    factory.createBindings(bindings, {{ZMQUriType::IPC, "threads"}});
-    ZMQPublishProvider pub{*conn, bindings, "topicOne"};
+    factory.createBindings(bindings, {{ZMQUriType::IPC, "thread"}});
+    ZMQPublishProvider pub{*conn, bindings, "TopicOne"};
     pub.setReplyTo("one_pub");
     while(*running)
     {
@@ -213,7 +213,7 @@ void PublishTopicTwo(scf::zmq::ZMQConnector *conn, bool *running)
     tracy::SetThreadName("PublishTopicTwo");
     ZMQBindings bindings;
     ZMQUriFactory factory{};
-    factory.createBindings(bindings, {{ZMQUriType::IPC, "threads"}});
+    factory.createBindings(bindings, {{ZMQUriType::IPC, "thread"}});
     ZMQPublishProvider pub{*conn, bindings, "TopicTwo"};
     pub.setReplyTo("two_pub");
     while(*running)
@@ -224,34 +224,38 @@ void PublishTopicTwo(scf::zmq::ZMQConnector *conn, bool *running)
     }
     ASSERT_TRUE(true); // we are running, no need to test more
 }
-void SubscriberOne(scf::zmq::ZMQConnector *conn, bool *running)
+void SubscriberOne(scf::zmq::ZMQConnector *conn, bool *running, int *counter)
 {
     using namespace scf::zmq;
     tracy::SetThreadName("SubscriberOne");
     ZMQUriFactory factory{};
-    ZMQSubscribeProvider sub{*conn,factory.buildUri({ZMQUriType::IPC, "threads"}),"topicOne"};
+    ZMQSubscribeProvider sub{*conn,factory.buildUri({ZMQUriType::IPC, "thread"}),"TopicOne"};
+    //sub.setTopic("TopicOne");
     while(*running)
     {
         FrameMarkStart("SubscriberOne Message");
-        if(sub.receive()){
+        if(sub.receive("TopicOne")){
             FrameMarkEnd("SubscriberOne Message");
+            ++(*counter);
             ASSERT_STREQ(sub.getReplyTo().c_str(),"one_pub");
         }
 
     }
     ASSERT_TRUE(true); // we are running, no need to test more
 }
-void SubscriberTwo(scf::zmq::ZMQConnector *conn, bool *running)
+void SubscriberTwo(scf::zmq::ZMQConnector *conn, bool *running, int *counter)
 {
     using namespace scf::zmq;
     tracy::SetThreadName("SubscriberTwo");
     ZMQUriFactory factory{};
-    ZMQSubscribeProvider sub{*conn,factory.buildUri({ZMQUriType::IPC, "threads"}),"TopicTwo"};
+    ZMQSubscribeProvider sub{*conn,factory.buildUri({ZMQUriType::IPC, "thread"}),"TopicTwo"};
+    //sub.setTopic("TopicTwo");
     while(*running)
     {
         FrameMarkStart("SubscriberTwo Message");
-        if(sub.receive()){
+        if(sub.receive("TopicTwo")){
             FrameMarkEnd("SubscriberTwo Message");
+            ++(*counter);
             ASSERT_STREQ(sub.getReplyTo().c_str(),"two_pub");
         }
 
@@ -262,16 +266,21 @@ void SubscriberTwo(scf::zmq::ZMQConnector *conn, bool *running)
 TEST(ZMQPublishPublishSubscriberSubscriber, start_four_threads) {
 
     using namespace scf::zmq;
+
     ZMQConnector conn{SharedContext};
+    ZMQConnector connSUB{};
+    ZMQConnector connPUB{};
     bool runningTS=true;
     bool runningTP=true;
+    int counterTS1=0;
+    int counterTS2=0;
     FrameMarkStart("Subscriber-start");
-    std::thread ts1(SubscriberOne,&conn, &runningTS);
-    std::thread ts2(SubscriberTwo,&conn, &runningTS);
+    std::thread ts1(SubscriberOne,&connSUB, &runningTS, &counterTS1);
+    std::thread ts2(SubscriberTwo,&connPUB, &runningTS, &counterTS2);
     sleep(1);
     FrameMarkStart("Publisher-start");
-    std::thread tp1(PublishTopicOne, &conn, &runningTP);
-    std::thread tp2(PublishTopicTwo, &conn, &runningTP);
+    std::thread tp1(PublishTopicOne, &connSUB, &runningTP);
+    std::thread tp2(PublishTopicTwo, &connPUB, &runningTP);
     sleep(2);
     runningTP=false;
     sleep(1);
@@ -281,5 +290,7 @@ TEST(ZMQPublishPublishSubscriberSubscriber, start_four_threads) {
     FrameMarkEnd("Subscriber-start");
     ts1.join();
     ts2.join();
+    std::cout << counterTS1 << std::endl;
+    std::cout << counterTS2 << std::endl;
     FrameMarkEnd("Publisher-start");
 }
